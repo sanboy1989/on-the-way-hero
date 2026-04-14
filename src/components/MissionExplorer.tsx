@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useAuthStore }            from '@/store/authStore';
 import { useMissions, seedMissions } from '@/hooks/useMissions';
 import UserProfile                  from '@/components/UserProfile';
+import PostMissionForm              from '@/components/PostMissionForm';
 import type { Mission }             from '@/types/mission';
 
 // ── Leaflet needs window — load only on client, never SSR ────────────────────
@@ -223,6 +224,7 @@ export default function MissionExplorer() {
   const [selectedMission, setSelected]  = useState<Mission | null>(null);
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [showProfile, setShowProfile]   = useState(false);
+  const [showPostForm, setShowPostForm] = useState(false);
   const [seeding, setSeeding]           = useState(false);
 
   const { user }                        = useAuthStore();
@@ -439,9 +441,42 @@ export default function MissionExplorer() {
         )}
       </div>
 
+      {/* ── Post Mission FAB ────────────────────────────────────────────── */}
+      {user && (
+        <button
+          onClick={() => setShowPostForm(true)}
+          style={{
+            position:     'fixed',
+            bottom:       24,
+            left:         16,
+            zIndex:       1000,
+            display:      'flex',
+            alignItems:   'center',
+            gap:          8,
+            padding:      '10px 18px',
+            borderRadius: 9999,
+            background:   COLORS.primary,
+            color:        '#fff',
+            fontSize:     14,
+            fontWeight:   700,
+            border:       'none',
+            cursor:       'pointer',
+            boxShadow:    '0 4px 16px rgba(0,0,0,0.4)',
+          }}
+        >
+          <span style={{ fontSize: 20, lineHeight: 1 }}>+</span>
+          <span>Post</span>
+        </button>
+      )}
+
       {/* ── User Profile overlay ────────────────────────────────────────── */}
       {showProfile && user && (
         <UserProfile user={user} onClose={() => setShowProfile(false)} />
+      )}
+
+      {/* ── Post Mission form overlay ────────────────────────────────────── */}
+      {showPostForm && (
+        <PostMissionForm onClose={() => setShowPostForm(false)} />
       )}
     </div>
   );

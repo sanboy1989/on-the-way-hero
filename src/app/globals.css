@@ -17,3 +17,8 @@ body {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }
+
+.otw-input:focus {
+  border-color: var(--color-primary) !important;
+  outline: none;
+}
