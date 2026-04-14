@@ -428,8 +428,8 @@ export default function MissionExplorer() {
             <span style={{ color: '#bbb', fontSize: 16, lineHeight: 1 }}>⌃</span>
             <span style={{ color: '#333', fontSize: 13, fontWeight: 600 }}>
               {loading
-                ? '載入中…'
-                : `附近有 ${missions.length} 個 Missions 正在等待英雄`}
+                ? 'Loading…'
+                : `${missions.length} mission${missions.length !== 1 ? 's' : ''} waiting nearby`}
             </span>
           </button>
 
@@ -461,33 +461,65 @@ export default function MissionExplorer() {
         </div>
       )}
 
-      {/* ── FAB (list view) ──────────────────────────────────────────── */}
-      {view === 'list' && user && (
-        <button
-          onClick={() => setShowPostForm(true)}
+      {/* ── Bottom bar (list view): Back to Map + FAB ────────────────── */}
+      {view === 'list' && (
+        <div
           style={{
-            position:       'absolute',
-            bottom:         28,
-            right:          14,
-            zIndex:         1999,
-            width:          56,
-            height:         56,
-            borderRadius:   '50%',
-            background:     'var(--color-primary)',
-            border:         'none',
-            color:          '#fff',
-            fontSize:       32,
-            fontWeight:     300,
-            cursor:         'pointer',
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-            boxShadow:      '0 4px 20px rgba(0,0,0,0.28)',
-            lineHeight:     1,
+            position:   'absolute',
+            bottom:     28,
+            left:       14,
+            right:      14,
+            zIndex:     1999,
+            display:    'flex',
+            alignItems: 'center',
+            gap:        12,
           }}
         >
-          +
-        </button>
+          <button
+            onClick={() => setView('map')}
+            style={{
+              flex:           1,
+              background:     'rgba(255,255,255,0.96)',
+              backdropFilter: 'blur(10px)',
+              borderRadius:   999,
+              padding:        '15px 20px',
+              display:        'flex',
+              alignItems:     'center',
+              gap:            10,
+              boxShadow:      '0 4px 24px rgba(0,0,0,0.15)',
+              border:         'none',
+              cursor:         'pointer',
+              textAlign:      'left',
+            }}
+          >
+            <span style={{ color: '#bbb', fontSize: 16, lineHeight: 1 }}>⌄</span>
+            <span style={{ color: '#333', fontSize: 13, fontWeight: 600 }}>Back to Map</span>
+          </button>
+          {user && (
+            <button
+              onClick={() => setShowPostForm(true)}
+              style={{
+                width:          56,
+                height:         56,
+                borderRadius:   '50%',
+                background:     'var(--color-primary)',
+                border:         'none',
+                color:          '#fff',
+                fontSize:       32,
+                fontWeight:     300,
+                cursor:         'pointer',
+                display:        'flex',
+                alignItems:     'center',
+                justifyContent: 'center',
+                boxShadow:      '0 4px 20px rgba(0,0,0,0.28)',
+                flexShrink:     0,
+                lineHeight:     1,
+              }}
+            >
+              +
+            </button>
+          )}
+        </div>
       )}
 
       {/* ── Overlays ─────────────────────────────────────────────────── */}

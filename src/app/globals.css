@@ -2,15 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Accent colour (set by themeStore) ───────────────────────────────────── */
 :root {
   --color-primary: #FF8C00;
 }
 
+/* ── Dark mode (default) ──────────────────────────────────────────────────── */
+:root {
+  --otw-panel:   #161616;
+  --otw-card:    #0d0d0d;
+  --otw-border:  #2a2a2a;
+  --otw-text:    #ffffff;
+  --otw-sub:     #888888;
+  --otw-muted:   #555555;
+  --otw-handle:  #333333;
+}
+
+/* ── Light mode ───────────────────────────────────────────────────────────── */
+html.light {
+  --otw-panel:   #ffffff;
+  --otw-card:    #f5f5f5;
+  --otw-border:  #e8e8e8;
+  --otw-text:    #111111;
+  --otw-sub:     #666666;
+  --otw-muted:   #aaaaaa;
+  --otw-handle:  #dddddd;
+}
+
+/* ── Global ───────────────────────────────────────────────────────────────── */
 html,
 body {
   height: 100%;
   background-color: #333333;
-  color: #ffffff;
+  color: var(--otw-text);
 }
 
 @keyframes slideUp {

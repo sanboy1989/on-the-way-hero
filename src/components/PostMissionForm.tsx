@@ -189,7 +189,7 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
       <div
         style={{
           position:     'relative',
-          background:   '#161616',
+          background:   'var(--otw-panel)',
           borderRadius: '20px 20px 0 0',
           maxHeight:    '92dvh',
           display:      'flex',
@@ -198,7 +198,7 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
         }}
       >
         {/* Drag handle */}
-        <div style={{ width: 40, height: 4, borderRadius: 2, background: '#333', margin: '12px auto 0', flexShrink: 0 }} />
+        <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--otw-handle)', margin: '12px auto 0', flexShrink: 0 }} />
 
         {/* Header */}
         <div
@@ -238,8 +238,8 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
               placeholder="e.g. IKEA KALLAX Shelf (White 4×4)"
               {...register('title')}
               style={{
-                width: '100%', background: '#0d0d0d',
-                border: '1px solid #2a2a2a', borderRadius: 10,
+                width: '100%', background: 'var(--otw-card)',
+                border: '1px solid var(--otw-border)', borderRadius: 10,
                 padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box',
               }}
             />
@@ -257,8 +257,8 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
               rows={2}
               {...register('description')}
               style={{
-                width: '100%', background: '#0d0d0d',
-                border: '1px solid #2a2a2a', borderRadius: 10,
+                width: '100%', background: 'var(--otw-card)',
+                border: '1px solid var(--otw-border)', borderRadius: 10,
                 padding: '12px 14px', color: '#fff', fontSize: 14,
                 resize: 'none', boxSizing: 'border-box',
               }}
@@ -276,8 +276,8 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
               placeholder="https://www.facebook.com/marketplace/…"
               {...register('marketplaceUrl')}
               style={{
-                width: '100%', background: '#0d0d0d',
-                border: '1px solid #2a2a2a', borderRadius: 10,
+                width: '100%', background: 'var(--otw-card)',
+                border: '1px solid var(--otw-border)', borderRadius: 10,
                 padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box',
               }}
             />
@@ -351,8 +351,8 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
               min={new Date().toISOString().slice(0, 16)}
               onChange={(e) => setExpectedDeliveryTime(e.target.value)}
               style={{
-                width: '100%', background: '#0d0d0d',
-                border: '1px solid #2a2a2a', borderRadius: 10,
+                width: '100%', background: 'var(--otw-card)',
+                border: '1px solid var(--otw-border)', borderRadius: 10,
                 padding: '12px 14px', color: '#fff', fontSize: 14,
                 boxSizing: 'border-box', colorScheme: 'dark',
               }}
@@ -379,8 +379,8 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
                   placeholder="0.00"
                   {...register('itemPrice')}
                   style={{
-                    width: '100%', background: '#0d0d0d',
-                    border: '1px solid #2a2a2a', borderRadius: 10,
+                    width: '100%', background: 'var(--otw-card)',
+                    border: '1px solid var(--otw-border)', borderRadius: 10,
                     padding: '12px 14px 12px 26px', color: '#fff', fontSize: 14, boxSizing: 'border-box',
                   }}
                 />
@@ -405,8 +405,8 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
                   placeholder="0.00"
                   {...register('deliveryFee')}
                   style={{
-                    width: '100%', background: '#0d0d0d',
-                    border: '1px solid #2a2a2a', borderRadius: 10,
+                    width: '100%', background: 'var(--otw-card)',
+                    border: '1px solid var(--otw-border)', borderRadius: 10,
                     padding: '12px 14px 12px 26px', color: '#fff', fontSize: 14, boxSizing: 'border-box',
                   }}
                 />

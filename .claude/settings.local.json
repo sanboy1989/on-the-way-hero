@@ -27,7 +27,8 @@
       "Bash(ls -lt ~/Downloads/*.png ~/Desktop/*.png)",
       "Bash(sips -z 192 192 \"/Users/jason/VS Code/On the way Hero/public/icons/icon-source.png\" --out \"/Users/jason/VS Code/On the way Hero/public/icons/icon-192.png\")",
       "Bash(sips -z 512 512 \"/Users/jason/VS Code/On the way Hero/public/icons/icon-source.png\" --out \"/Users/jason/VS Code/On the way Hero/public/icons/icon-512.png\")",
-      "Bash(sips -z 180 180 \"/Users/jason/VS Code/On the way Hero/public/icons/icon-source.png\" --out \"/Users/jason/VS Code/On the way Hero/public/icons/apple-touch-icon.png\")"
+      "Bash(sips -z 180 180 \"/Users/jason/VS Code/On the way Hero/public/icons/icon-source.png\" --out \"/Users/jason/VS Code/On the way Hero/public/icons/apple-touch-icon.png\")",
+      "Bash(npx tsc:*)"
     ]
   }
 }

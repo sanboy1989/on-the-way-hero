@@ -145,10 +145,10 @@ export default function EditMissionForm({ mission, onClose }: Props) {
     <div style={{ position: 'fixed', inset: 0, zIndex: 3500, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)' }} />
 
-      <div style={{ position: 'relative', background: '#161616', borderRadius: '20px 20px 0 0', maxHeight: '92dvh', display: 'flex', flexDirection: 'column', animation: 'slideUp 0.25s cubic-bezier(0.32,0,0.67,0) both' }}>
-        <div style={{ width: 40, height: 4, borderRadius: 2, background: '#333', margin: '12px auto 0', flexShrink: 0 }} />
+      <div style={{ position: 'relative', background: 'var(--otw-panel)', borderRadius: '20px 20px 0 0', maxHeight: '92dvh', display: 'flex', flexDirection: 'column', animation: 'slideUp 0.25s cubic-bezier(0.32,0,0.67,0) both' }}>
+        <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--otw-handle)', margin: '12px auto 0', flexShrink: 0 }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid #2a2a2a', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid var(--otw-border)', flexShrink: 0 }}>
           <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>Edit Mission</span>
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', fontSize: 20, cursor: 'pointer' }}>✕</button>
         </div>
@@ -159,7 +159,7 @@ export default function EditMissionForm({ mission, onClose }: Props) {
           <div style={{ marginBottom: 16 }}>
             <label style={{ color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, display: 'block', marginBottom: 8 }}>ITEM NAME</label>
             <input type="text" className="otw-input" {...register('title')}
-              style={{ width: '100%', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
+              style={{ width: '100%', background: 'var(--otw-card)', border: '1px solid var(--otw-border)', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
             {errors.title && <p style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>{errors.title.message}</p>}
           </div>
 
@@ -167,7 +167,7 @@ export default function EditMissionForm({ mission, onClose }: Props) {
           <div style={{ marginBottom: 20 }}>
             <label style={{ color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, display: 'block', marginBottom: 8 }}>DESCRIPTION</label>
             <textarea className="otw-input" rows={2} {...register('description')}
-              style={{ width: '100%', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, resize: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', background: 'var(--otw-card)', border: '1px solid var(--otw-border)', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, resize: 'none', boxSizing: 'border-box' }} />
           </div>
 
           {/* Marketplace URL */}
@@ -176,7 +176,7 @@ export default function EditMissionForm({ mission, onClose }: Props) {
               MARKETPLACE LINK <span style={{ fontWeight: 400, textTransform: 'none', fontSize: 10 }}>(optional)</span>
             </label>
             <input type="url" className="otw-input" placeholder="https://www.facebook.com/marketplace/…" {...register('marketplaceUrl')}
-              style={{ width: '100%', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
+              style={{ width: '100%', background: 'var(--otw-card)', border: '1px solid var(--otw-border)', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
             <p style={{ color: '#555', fontSize: 11, marginTop: 4 }}>Let the hero know exactly what to buy</p>
           </div>
 
@@ -215,7 +215,7 @@ export default function EditMissionForm({ mission, onClose }: Props) {
               value={expectedDeliveryTime}
               min={new Date().toISOString().slice(0, 16)}
               onChange={(e) => setExpectedDeliveryTime(e.target.value)}
-              style={{ width: '100%', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box', colorScheme: 'dark' }}
+              style={{ width: '100%', background: 'var(--otw-card)', border: '1px solid var(--otw-border)', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box', colorScheme: 'dark' }}
             />
           </div>
 
@@ -230,7 +230,7 @@ export default function EditMissionForm({ mission, onClose }: Props) {
                 <div style={{ position: 'relative' }}>
                   <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#888', pointerEvents: 'none' }}>$</span>
                   <input type="number" step="0.01" min="0" className="otw-input" {...register(field)}
-                    style={{ width: '100%', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px 12px 26px', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
+                    style={{ width: '100%', background: 'var(--otw-card)', border: '1px solid var(--otw-border)', borderRadius: 10, padding: '12px 14px 12px 26px', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
                 </div>
                 {errors[field] && <p style={{ color: '#ef4444', fontSize: 11, marginTop: 3 }}>{errors[field]?.message}</p>}
               </div>
@@ -238,7 +238,7 @@ export default function EditMissionForm({ mission, onClose }: Props) {
           </div>
 
           {/* Fee breakdown */}
-          <div style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 12, padding: 14, marginBottom: 24 }}>
+          <div style={{ background: 'var(--otw-card)', border: '1px solid var(--otw-border)', borderRadius: 12, padding: 14, marginBottom: 24 }}>
             <p style={{ color: '#666', fontSize: 11, fontWeight: 700, letterSpacing: 1, margin: '0 0 10px' }}>FEE BREAKDOWN</p>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
               <span style={{ color: '#888' }}>You advance upfront</span>

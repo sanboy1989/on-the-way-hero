@@ -7,12 +7,17 @@ import MissionExplorer     from '@/components/MissionExplorer';
 import { useAuthStore }    from '@/store/authStore';
 import { useThemeStore }   from '@/store/themeStore';
 
-/** Applies the persisted theme colour to the CSS variable on first render. */
+/** Applies persisted theme colour + dark/light mode on first render. */
 function ThemeApplier() {
-  const { primaryColor } = useThemeStore();
+  const { primaryColor, colorMode } = useThemeStore();
   useEffect(() => {
     document.documentElement.style.setProperty('--color-primary', primaryColor);
-  }, [primaryColor]);
+    if (colorMode === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+  }, [primaryColor, colorMode]);
   return null;
 }
 

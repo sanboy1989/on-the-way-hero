@@ -71,7 +71,7 @@ function MissionRow({
   return (
     <div
       style={{
-        background:   '#0d0d0d',
+        background:   'var(--otw-card)',
         border:       '1px solid #2a2a2a',
         borderRadius: 12,
         padding:      '12px 14px',
@@ -102,7 +102,7 @@ function MissionRow({
           }}
         >
           {ALL_STATUSES.map((s) => (
-            <option key={s} value={s} style={{ background: '#161616', color: '#fff' }}>{s}</option>
+            <option key={s} value={s} style={{ background: 'var(--otw-panel)', color: '#fff' }}>{s}</option>
           ))}
         </select>
       </div>
@@ -190,7 +190,7 @@ export default function MasterPage({ onClose }: { onClose: () => void }) {
         <div
           style={{
             position:      'relative',
-            background:    '#161616',
+            background:    'var(--otw-panel)',
             borderRadius:  '20px 20px 0 0',
             marginTop:     '6dvh',
             flex:          1,
@@ -201,10 +201,10 @@ export default function MasterPage({ onClose }: { onClose: () => void }) {
           }}
         >
           {/* Handle */}
-          <div style={{ width: 40, height: 4, borderRadius: 2, background: '#333', margin: '12px auto 0', flexShrink: 0 }} />
+          <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--otw-handle)', margin: '12px auto 0', flexShrink: 0 }} />
 
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid #2a2a2a', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid var(--otw-border)', flexShrink: 0 }}>
             <div>
               <p style={{ color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, margin: 0 }}>ADMIN</p>
               <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: '2px 0 0' }}>
@@ -215,7 +215,7 @@ export default function MasterPage({ onClose }: { onClose: () => void }) {
           </div>
 
           {/* Filter tabs */}
-          <div style={{ display: 'flex', padding: '10px 16px', gap: 8, borderBottom: '1px solid #2a2a2a', flexShrink: 0 }}>
+          <div style={{ display: 'flex', padding: '10px 16px', gap: 8, borderBottom: '1px solid var(--otw-border)', flexShrink: 0 }}>
             {FILTERS.map((f) => {
               const count = f.statuses
                 ? missions.filter((m) => (f.statuses as readonly string[]).includes(m.status)).length

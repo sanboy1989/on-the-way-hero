@@ -136,7 +136,7 @@ export default function ActiveMissionSheet({ mission, onClose }: Props) {
       <div
         style={{
           position:      'relative',
-          background:    '#161616',
+          background:    'var(--otw-panel)',
           borderRadius:  '20px 20px 0 0',
           maxHeight:     '88dvh',
           overflowY:     'auto',
@@ -144,7 +144,7 @@ export default function ActiveMissionSheet({ mission, onClose }: Props) {
         }}
       >
         {/* Handle */}
-        <div style={{ width: 40, height: 4, borderRadius: 2, background: '#333', margin: '12px auto 0' }} />
+        <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--otw-handle)', margin: '12px auto 0' }} />
 
         {/* Header */}
         <div
@@ -153,7 +153,7 @@ export default function ActiveMissionSheet({ mission, onClose }: Props) {
             alignItems:     'center',
             justifyContent: 'space-between',
             padding:        '14px 20px',
-            borderBottom:   '1px solid #2a2a2a',
+            borderBottom:   '1px solid var(--otw-border)',
           }}
         >
           <div>
@@ -228,7 +228,7 @@ export default function ActiveMissionSheet({ mission, onClose }: Props) {
           {(mission.marketplaceUrl || mission.expectedDeliveryTime) && (
             <div
               style={{
-                background:   '#0d0d0d',
+                background:   'var(--otw-card)',
                 border:       '1px solid #2a2a2a',
                 borderRadius: 12,
                 padding:      '12px 14px',
@@ -276,7 +276,7 @@ export default function ActiveMissionSheet({ mission, onClose }: Props) {
           {/* ── Route + navigation ───────────────────────────────────── */}
           <div
             style={{
-              background:   '#0d0d0d',
+              background:   'var(--otw-card)',
               border:       '1px solid #2a2a2a',
               borderRadius: 12,
               overflow:     'hidden',
@@ -368,7 +368,7 @@ export default function ActiveMissionSheet({ mission, onClose }: Props) {
           {/* ── Financials ───────────────────────────────────────────── */}
           <div
             style={{
-              background:   '#0d0d0d',
+              background:   'var(--otw-card)',
               border:       '1px solid #2a2a2a',
               borderRadius: 12,
               padding:      14,
