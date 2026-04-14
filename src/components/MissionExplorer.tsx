@@ -2,6 +2,10 @@
 
 import { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useAuthStore } from '@/store/authStore';
+import InstallButton from '@/components/InstallButton';
 import type { Mission } from '@/types/mission';
 
 // ── Leaflet needs window — load only on client, never SSR ────────────────────
@@ -287,6 +291,8 @@ export default function MissionExplorer() {
   const [selectedMission, setSelected]  = useState<Mission | null>(null);
   const [sidebarOpen, setSidebarOpen]   = useState(false); // collapsed by default on mobile
 
+  const { user } = useAuthStore();
+
   const handleAccept = useCallback((mission: Mission) => {
     // TODO: call Firebase Function completeMission(missionId)
     alert(
@@ -301,16 +307,55 @@ export default function MissionExplorer() {
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header
-        className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+        className="flex items-center justify-between px-4 py-3 flex-shrink-0 gap-3"
         style={{ backgroundColor: '#1a1a1a', borderBottom: `1px solid ${COLORS.border}` }}
       >
-        <div className="flex items-center gap-2">
+        {/* Logo */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           <span className="text-xl font-black" style={{ color: COLORS.orange }}>
-            On The Way
+            OTW
           </span>
           <span className="text-xl font-black text-white">Hero</span>
         </div>
+
+        {/* Center: view toggle */}
         <ViewToggle view={view} onChange={setView} />
+
+        {/* Right: install + user avatar */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <InstallButton />
+
+          {user && (
+            <button
+              onClick={() => signOut(auth)}
+              title={`Signed in as ${user.displayName ?? user.email}\nTap to sign out`}
+              style={{
+                background:   'none',
+                border:       `2px solid ${COLORS.border}`,
+                borderRadius: '50%',
+                padding:      0,
+                cursor:       'pointer',
+                width:        34,
+                height:       34,
+                overflow:     'hidden',
+                flexShrink:   0,
+              }}
+            >
+              {user.photoURL ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName ?? 'User'}
+                  width={34}
+                  height={34}
+                  style={{ display: 'block', borderRadius: '50%' }}
+                />
+              ) : (
+                <span style={{ fontSize: 18, lineHeight: '30px', color: '#aaa' }}>👤</span>
+              )}
+            </button>
+          )}
+        </div>
       </header>
 
       {/* ── Legend bar (map only) ───────────────────────────────────────── */}
