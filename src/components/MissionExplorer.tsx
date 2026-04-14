@@ -2,9 +2,10 @@
 
 import { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { useAuthStore }   from '@/store/authStore';
-import UserProfile        from '@/components/UserProfile';
-import type { Mission }   from '@/types/mission';
+import { useAuthStore }            from '@/store/authStore';
+import { useMissions, seedMissions } from '@/hooks/useMissions';
+import UserProfile                  from '@/components/UserProfile';
+import type { Mission }             from '@/types/mission';
 
 // ── Leaflet needs window — load only on client, never SSR ────────────────────
 const MissionMap = dynamic(() => import('./MissionMap'), {
@@ -38,73 +39,6 @@ function timeUntilDeadline(deadline: Date): string {
   return hours > 0 ? `${hours}h ${mins}m left` : `${mins}m left`;
 }
 
-// ─── Mock data (replace with Firestore query) ─────────────────────────────────
-
-const MOCK_MISSIONS: Mission[] = [
-  {
-    id:             'msn_001',
-    buyerId:        'user_abc',
-    heroId:         null,
-    title:          'IKEA KALLAX Shelf (White 4x4)',
-    description:    'Found a great deal on Marketplace. Seller is in NE, I live in NW.',
-    itemPhotoUrl:   null,
-    marketplaceUrl: null,
-    itemPrice:      8000,
-    deliveryFee:    2500,
-    platformFee:    125,
-    heroEarning:    2375,
-    pickupAddress:  'Taradale, NE Calgary, AB',
-    pickupCoords:   { latitude: 51.1315, longitude: -113.9375 },
-    dropoffAddress: 'Dalhousie, NW Calgary, AB',
-    dropoffCoords:  { latitude: 51.1018, longitude: -114.1633 },
-    pickupDeadline: new Date(Date.now() + 4 * 3_600_000),
-    distanceKm:     18.4,
-    status:         'Open',
-    createdAt:      new Date(Date.now() - 30 * 60_000),
-  },
-  {
-    id:             'msn_002',
-    buyerId:        'user_def',
-    heroId:         null,
-    title:          'Dyson V8 Vacuum (Refurbished)',
-    description:    'Seller in SE, need delivery to SW.',
-    itemPhotoUrl:   null,
-    marketplaceUrl: null,
-    itemPrice:      18000,
-    deliveryFee:    3000,
-    platformFee:    150,
-    heroEarning:    2850,
-    pickupAddress:  'Mahogany, SE Calgary, AB',
-    pickupCoords:   { latitude: 50.8939, longitude: -113.9672 },
-    dropoffAddress: 'Marda Loop, SW Calgary, AB',
-    dropoffCoords:  { latitude: 51.0278, longitude: -114.1022 },
-    pickupDeadline: new Date(Date.now() + 2 * 3_600_000),
-    distanceKm:     22.1,
-    status:         'Open',
-    createdAt:      new Date(Date.now() - 15 * 60_000),
-  },
-  {
-    id:             'msn_003',
-    buyerId:        'user_ghi',
-    heroId:         null,
-    title:          'Nintendo Switch OLED Bundle',
-    description:    'Seller requires cash. Hero must advance $320. High value — bonus included.',
-    itemPhotoUrl:   null,
-    marketplaceUrl: null,
-    itemPrice:      32000,
-    deliveryFee:    4500,
-    platformFee:    225,
-    heroEarning:    4275,
-    pickupAddress:  'Skyview Ranch, NE Calgary, AB',
-    pickupCoords:   { latitude: 51.1499, longitude: -113.9607 },
-    dropoffAddress: 'Tuscany, NW Calgary, AB',
-    dropoffCoords:  { latitude: 51.1082, longitude: -114.2187 },
-    pickupDeadline: new Date(Date.now() + 6 * 3_600_000),
-    distanceKm:     25.3,
-    status:         'Open',
-    createdAt:      new Date(Date.now() - 5 * 60_000),
-  },
-];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -286,12 +220,18 @@ function MissionCard({
 
 export default function MissionExplorer() {
   const [view, setView]                 = useState<'map' | 'list'>('map');
-  const [missions]                      = useState<Mission[]>(MOCK_MISSIONS);
   const [selectedMission, setSelected]  = useState<Mission | null>(null);
   const [sidebarOpen, setSidebarOpen]   = useState(false);
   const [showProfile, setShowProfile]   = useState(false);
+  const [seeding, setSeeding]           = useState(false);
 
-  const { user } = useAuthStore();
+  const { user }                        = useAuthStore();
+  const { missions, loading, error }    = useMissions();
+
+  async function handleSeed() {
+    setSeeding(true);
+    try { await seedMissions(); } finally { setSeeding(false); }
+  }
 
   const handleAccept = useCallback((mission: Mission) => {
     // TODO: call Firebase Function acceptMission(missionId)
@@ -409,7 +349,7 @@ export default function MissionExplorer() {
               ) : (
                 <>
                   <span>☰</span>
-                  <span>{missions.length} Missions</span>
+                  <span>{loading ? '…' : `${missions.length} Missions`}</span>
                 </>
               )}
             </button>
@@ -457,11 +397,32 @@ export default function MissionExplorer() {
         {/* List view */}
         {view === 'list' && (
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-            {missions.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div
+                  className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
+                  style={{ borderColor: `${COLORS.primary} transparent ${COLORS.primary} ${COLORS.primary}` }}
+                />
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+                <p className="text-2xl mb-2">⚠️</p>
+                <p className="text-red-400 text-sm font-semibold">Failed to load missions</p>
+                <p className="text-gray-600 text-xs mt-1">{error}</p>
+              </div>
+            ) : missions.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                 <p className="text-4xl mb-3">📭</p>
                 <p className="font-semibold">No open missions nearby</p>
-                <p className="text-sm mt-1">Check back soon!</p>
+                <p className="text-sm mt-1 mb-4">Check back soon!</p>
+                <button
+                  onClick={handleSeed}
+                  disabled={seeding}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-white opacity-70 hover:opacity-100 transition-opacity"
+                  style={{ backgroundColor: COLORS.primary }}
+                >
+                  {seeding ? 'Adding…' : '+ Seed test missions'}
+                </button>
               </div>
             ) : (
               missions.map((m) => (
