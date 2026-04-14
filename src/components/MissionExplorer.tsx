@@ -2,11 +2,9 @@
 
 import { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { useAuthStore } from '@/store/authStore';
-import InstallButton from '@/components/InstallButton';
-import type { Mission } from '@/types/mission';
+import { useAuthStore }   from '@/store/authStore';
+import UserProfile        from '@/components/UserProfile';
+import type { Mission }   from '@/types/mission';
 
 // ── Leaflet needs window — load only on client, never SSR ────────────────────
 const MissionMap = dynamic(() => import('./MissionMap'), {
@@ -16,13 +14,14 @@ const MissionMap = dynamic(() => import('./MissionMap'), {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+// 'var(--color-primary)' is set globally from themeStore — used for branded orange accents
 const COLORS = {
-  orange:  '#FF8C00',
+  primary:  'var(--color-primary)',
   darkGray: '#333333',
-  pickup:  '#22C55E',
-  dropoff: '#3B82F6',
-  cardBg:  '#1E1E1E',
-  border:  '#2E2E2E',
+  pickup:   '#22C55E',
+  dropoff:  '#3B82F6',
+  cardBg:   '#1E1E1E',
+  border:   '#2E2E2E',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -119,7 +118,7 @@ function MapLoadingScreen() {
         <div
           className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-3"
           style={{
-            borderColor: `${COLORS.orange} transparent ${COLORS.orange} ${COLORS.orange}`,
+            borderColor: `${COLORS.primary} transparent ${COLORS.primary} ${COLORS.primary}`,
           }}
         />
         <p className="text-sm text-gray-400">Loading map…</p>
@@ -146,7 +145,7 @@ function ViewToggle({
           onClick={() => onChange(v)}
           className="px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-200"
           style={{
-            backgroundColor: view === v ? COLORS.orange : 'transparent',
+            backgroundColor: view === v ? COLORS.primary : 'transparent',
             color:            view === v ? '#fff' : '#aaa',
           }}
         >
@@ -199,8 +198,8 @@ function MissionCard({
       className="rounded-xl p-4 cursor-pointer transition-all duration-200 select-none"
       style={{
         backgroundColor: isSelected ? '#2a1a00' : COLORS.cardBg,
-        border:    `1px solid ${isSelected ? COLORS.orange : COLORS.border}`,
-        boxShadow: isSelected ? `0 0 0 1px ${COLORS.orange}44` : 'none',
+        border:    `1px solid ${isSelected ? COLORS.primary : COLORS.border}`,
+        boxShadow: isSelected ? `0 0 0 1px ${COLORS.primary}44` : 'none',
       }}
     >
       {/* Header */}
@@ -262,7 +261,7 @@ function MissionCard({
           </span>
           <span
             className="text-sm font-extrabold"
-            style={{ color: COLORS.orange }}
+            style={{ color: COLORS.primary }}
           >
             {centsToCAD(mission.heroEarning)}
           </span>
@@ -274,7 +273,7 @@ function MissionCard({
         <button
           onClick={(e) => { e.stopPropagation(); onAccept(mission); }}
           className="w-full py-2 rounded-lg text-sm font-bold text-white transition-opacity hover:opacity-90 active:opacity-75"
-          style={{ backgroundColor: COLORS.orange }}
+          style={{ backgroundColor: COLORS.primary }}
         >
           Accept Mission
         </button>
@@ -289,12 +288,13 @@ export default function MissionExplorer() {
   const [view, setView]                 = useState<'map' | 'list'>('map');
   const [missions]                      = useState<Mission[]>(MOCK_MISSIONS);
   const [selectedMission, setSelected]  = useState<Mission | null>(null);
-  const [sidebarOpen, setSidebarOpen]   = useState(false); // collapsed by default on mobile
+  const [sidebarOpen, setSidebarOpen]   = useState(false);
+  const [showProfile, setShowProfile]   = useState(false);
 
   const { user } = useAuthStore();
 
   const handleAccept = useCallback((mission: Mission) => {
-    // TODO: call Firebase Function completeMission(missionId)
+    // TODO: call Firebase Function acceptMission(missionId)
     alert(
       `Mission accepted!\n\nYou advance: ${centsToCAD(mission.itemPrice)}\nYou earn: ${centsToCAD(mission.heroEarning)} after delivery.`,
     );
@@ -310,52 +310,53 @@ export default function MissionExplorer() {
         className="flex items-center justify-between px-4 py-3 flex-shrink-0 gap-3"
         style={{ backgroundColor: '#1a1a1a', borderBottom: `1px solid ${COLORS.border}` }}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xl font-black" style={{ color: COLORS.orange }}>
-            OTW
-          </span>
-          <span className="text-xl font-black text-white">Hero</span>
-        </div>
+        {/* Logo — app icon */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/icons/apple-touch-icon.png"
+          alt="OTW Hero"
+          width={36}
+          height={36}
+          style={{ borderRadius: 9, flexShrink: 0 }}
+        />
 
         {/* Center: view toggle */}
         <ViewToggle view={view} onChange={setView} />
 
-        {/* Right: install + user avatar */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <InstallButton />
-
-          {user && (
-            <button
-              onClick={() => signOut(auth)}
-              title={`Signed in as ${user.displayName ?? user.email}\nTap to sign out`}
-              style={{
-                background:   'none',
-                border:       `2px solid ${COLORS.border}`,
-                borderRadius: '50%',
-                padding:      0,
-                cursor:       'pointer',
-                width:        34,
-                height:       34,
-                overflow:     'hidden',
-                flexShrink:   0,
-              }}
-            >
-              {user.photoURL ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={user.photoURL}
-                  alt={user.displayName ?? 'User'}
-                  width={34}
-                  height={34}
-                  style={{ display: 'block', borderRadius: '50%' }}
-                />
-              ) : (
-                <span style={{ fontSize: 18, lineHeight: '30px', color: '#aaa' }}>👤</span>
-              )}
-            </button>
-          )}
-        </div>
+        {/* Right: user avatar → opens profile */}
+        {user && (
+          <button
+            onClick={() => setShowProfile(true)}
+            title="Profile & Settings"
+            style={{
+              background:   'none',
+              border:       `2px solid ${COLORS.border}`,
+              borderRadius: '50%',
+              padding:      0,
+              cursor:       'pointer',
+              width:        36,
+              height:       36,
+              overflow:     'hidden',
+              flexShrink:   0,
+              display:      'flex',
+              alignItems:   'center',
+              justifyContent: 'center',
+            }}
+          >
+            {user.photoURL ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.photoURL}
+                alt={user.displayName ?? 'User'}
+                width={36}
+                height={36}
+                style={{ display: 'block', borderRadius: '50%' }}
+              />
+            ) : (
+              <span style={{ fontSize: 18, color: '#aaa' }}>👤</span>
+            )}
+          </button>
+        )}
       </header>
 
       {/* ── Legend bar (map only) ───────────────────────────────────────── */}
@@ -373,7 +374,7 @@ export default function MissionExplorer() {
             Drop-off
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-6 h-0.5" style={{ backgroundColor: COLORS.orange }} />
+            <span className="inline-block w-6 h-0.5" style={{ backgroundColor: COLORS.primary }} />
             Route
           </span>
           <span className="ml-auto text-gray-600 text-xs">© OpenStreetMap</span>
@@ -398,7 +399,7 @@ export default function MissionExplorer() {
             <button
               onClick={() => setSidebarOpen((o) => !o)}
               className="absolute bottom-6 right-4 z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold text-white shadow-lg transition-all active:scale-95"
-              style={{ backgroundColor: COLORS.orange }}
+              style={{ backgroundColor: COLORS.primary }}
             >
               {sidebarOpen ? (
                 <>
@@ -476,6 +477,11 @@ export default function MissionExplorer() {
           </div>
         )}
       </div>
+
+      {/* ── User Profile overlay ────────────────────────────────────────── */}
+      {showProfile && user && (
+        <UserProfile user={user} onClose={() => setShowProfile(false)} />
+      )}
     </div>
   );
 }

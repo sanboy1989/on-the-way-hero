@@ -1,9 +1,20 @@
 'use client';
 
+import { useEffect } from 'react';
 import AuthProvider        from '@/components/AuthProvider';
 import LoginPage           from '@/components/LoginPage';
 import MissionExplorer     from '@/components/MissionExplorer';
 import { useAuthStore }    from '@/store/authStore';
+import { useThemeStore }   from '@/store/themeStore';
+
+/** Applies the persisted theme colour to the CSS variable on first render. */
+function ThemeApplier() {
+  const { primaryColor } = useThemeStore();
+  useEffect(() => {
+    document.documentElement.style.setProperty('--color-primary', primaryColor);
+  }, [primaryColor]);
+  return null;
+}
 
 function AppGate() {
   const { user, loading } = useAuthStore();
@@ -24,7 +35,7 @@ function AppGate() {
             width:        40,
             height:       40,
             border:       '3px solid #2a2a2a',
-            borderTop:    '3px solid #FF8C00',
+            borderTop:    '3px solid var(--color-primary)',
             borderRadius: '50%',
             animation:    'spin 0.8s linear infinite',
           }}
@@ -42,6 +53,7 @@ function AppGate() {
 export default function Home() {
   return (
     <AuthProvider>
+      <ThemeApplier />
       <AppGate />
     </AuthProvider>
   );

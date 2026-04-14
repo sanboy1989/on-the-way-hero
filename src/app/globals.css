@@ -2,9 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #FF8C00;
+}
+
 html,
 body {
   height: 100%;
   background-color: #333333;
   color: #ffffff;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }
