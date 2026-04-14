@@ -1,11 +1,8 @@
 'use client';
 
 /**
- * MissionMap — Leaflet + OpenStreetMap (free, no API key)
- * Dark tiles: CartoDB Dark Matter (free, no key required)
- *
- * This file is always loaded with { ssr: false } from MissionExplorer
- * because Leaflet requires window/document at import time.
+ * MissionMap — Leaflet + CartoDB Voyager (light tiles, free, no key)
+ * Loaded with { ssr: false } from MissionExplorer — Leaflet needs window.
  */
 
 import { useEffect, useRef } from 'react';
@@ -38,7 +35,6 @@ function centsToCAD(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-/** Compute bearing in degrees from point A to point B (lat/lng). */
 function bearing(a: [number, number], b: [number, number]): number {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const lat1 = toRad(a[0]);
@@ -51,16 +47,10 @@ function bearing(a: [number, number], b: [number, number]): number {
   return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
 }
 
-/** Point 55% of the way from A to B. */
-function along(
-  a: [number, number],
-  b: [number, number],
-  t = 0.55,
-): [number, number] {
+function along(a: [number, number], b: [number, number], t = 0.55): [number, number] {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 }
 
-/** Leaflet DivIcon with an orange SVG arrowhead rotated to bearing. */
 function arrowIcon(deg: number): L.DivIcon {
   return L.divIcon({
     html: `
@@ -80,162 +70,108 @@ function arrowIcon(deg: number): L.DivIcon {
   });
 }
 
-// ─── Auto-locate sub-component ────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function LocateUser() {
   const map = useMap();
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        map.setView([pos.coords.latitude, pos.coords.longitude], 11);
-      },
-      () => {
-        map.setView(CALGARY_CENTER, 11); // fallback: Calgary centre
-      },
+      (pos) => map.setView([pos.coords.latitude, pos.coords.longitude], 11),
+      ()    => map.setView(CALGARY_CENTER, 11),
       { timeout: 5000 },
     );
   }, [map]);
   return null;
 }
 
-// ─── PanTo selected mission ───────────────────────────────────────────────────
-
 function PanTo({ mission }: { mission: Mission | null }) {
   const map = useMap();
   useEffect(() => {
     if (!mission) return;
-    map.panTo([
-      mission.pickupCoords.latitude,
-      mission.pickupCoords.longitude,
-    ]);
+    map.panTo([mission.pickupCoords.latitude, mission.pickupCoords.longitude]);
   }, [mission, map]);
   return null;
 }
 
-// ─── Main map component ───────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 interface MissionMapProps {
-  missions:         Mission[];
-  selectedMission:  Mission | null;
-  onSelect:         (m: Mission) => void;
+  missions:        Mission[];
+  selectedMission: Mission | null;
+  onSelect:        (m: Mission) => void;
 }
 
-export default function MissionMap({
-  missions,
-  selectedMission,
-  onSelect,
-}: MissionMapProps) {
+export default function MissionMap({ missions, selectedMission, onSelect }: MissionMapProps) {
   const mapRef = useRef<L.Map | null>(null);
 
   return (
     <MapContainer
       center={CALGARY_CENTER}
       zoom={11}
-      style={{ height: '100%', width: '100%', background: '#1a1a2e' }}
+      style={{ height: '100%', width: '100%' }}
       ref={mapRef}
-      zoomControl={true}
+      zoomControl={false}
     >
-      {/* ── Dark tile layer (CartoDB Dark Matter — free, no key) ───────── */}
+      {/* Light tile layer — CartoDB Voyager */}
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
         subdomains="abcd"
         maxZoom={19}
       />
 
-      {/* ── Auto-locate + pan-to ──────────────────────────────────────── */}
       <LocateUser />
       <PanTo mission={selectedMission} />
 
-      {/* ── One layer group per mission ───────────────────────────────── */}
       {missions.map((mission) => {
-        const pickup:  [number, number] = [
-          mission.pickupCoords.latitude,
-          mission.pickupCoords.longitude,
-        ];
-        const dropoff: [number, number] = [
-          mission.dropoffCoords.latitude,
-          mission.dropoffCoords.longitude,
-        ];
+        const pickup:  [number, number] = [mission.pickupCoords.latitude,  mission.pickupCoords.longitude];
+        const dropoff: [number, number] = [mission.dropoffCoords.latitude, mission.dropoffCoords.longitude];
         const midPt    = along(pickup, dropoff, 0.55);
         const arrowDeg = bearing(pickup, dropoff);
         const isSelected = selectedMission?.id === mission.id;
 
         return (
           <div key={mission.id}>
-            {/* Orange polyline pickup → dropoff */}
             <Polyline
               positions={[pickup, dropoff]}
-              pathOptions={{
-                color:   COLORS.orange,
-                weight:  isSelected ? 4 : 2.5,
-                opacity: isSelected ? 1 : 0.75,
-              }}
+              pathOptions={{ color: COLORS.orange, weight: isSelected ? 4 : 2.5, opacity: isSelected ? 1 : 0.75 }}
               eventHandlers={{ click: () => onSelect(mission) }}
             />
-
-            {/* Arrowhead marker at 55% along the line */}
             <Marker
               position={midPt}
               icon={arrowIcon(arrowDeg)}
               eventHandlers={{ click: () => onSelect(mission) }}
             />
-
-            {/* Green pickup circle */}
             <CircleMarker
               center={pickup}
               radius={9}
-              pathOptions={{
-                fillColor:   COLORS.pickup,
-                fillOpacity: 1,
-                color:       '#fff',
-                weight:      2,
-              }}
+              pathOptions={{ fillColor: COLORS.pickup, fillOpacity: 1, color: '#fff', weight: 2.5 }}
               eventHandlers={{ click: () => onSelect(mission) }}
             >
               <Popup>
                 <div style={{ minWidth: 180, fontFamily: 'sans-serif' }}>
                   <strong style={{ fontSize: 13 }}>{mission.title}</strong>
-                  <p style={{ fontSize: 11, color: '#555', margin: '4px 0' }}>
-                    Pickup: {mission.pickupAddress}
-                  </p>
+                  <p style={{ fontSize: 11, color: '#555', margin: '4px 0' }}>Pickup: {mission.pickupAddress}</p>
                   <p style={{ fontSize: 12, margin: 0 }}>
-                    Advance:{' '}
-                    <span style={{ color: '#dc2626', fontWeight: 700 }}>
-                      {centsToCAD(mission.itemPrice)}
-                    </span>
+                    Advance: <span style={{ color: '#dc2626', fontWeight: 700 }}>{centsToCAD(mission.itemPrice)}</span>
                   </p>
                   <p style={{ fontSize: 12, margin: '2px 0 0' }}>
-                    You earn:{' '}
-                    <span style={{ color: COLORS.orange, fontWeight: 700 }}>
-                      {centsToCAD(mission.heroEarning)}
-                    </span>
+                    You earn: <span style={{ color: COLORS.orange, fontWeight: 700 }}>{centsToCAD(mission.heroEarning)}</span>
                   </p>
                 </div>
               </Popup>
             </CircleMarker>
-
-            {/* Blue dropoff circle */}
             <CircleMarker
               center={dropoff}
               radius={9}
-              pathOptions={{
-                fillColor:   COLORS.dropoff,
-                fillOpacity: 1,
-                color:       '#fff',
-                weight:      2,
-              }}
+              pathOptions={{ fillColor: COLORS.dropoff, fillOpacity: 1, color: '#fff', weight: 2.5 }}
               eventHandlers={{ click: () => onSelect(mission) }}
             >
               <Popup>
                 <div style={{ minWidth: 180, fontFamily: 'sans-serif' }}>
                   <strong style={{ fontSize: 13 }}>{mission.title}</strong>
-                  <p style={{ fontSize: 11, color: '#555', margin: '4px 0' }}>
-                    Drop-off: {mission.dropoffAddress}
-                  </p>
-                  <p style={{ fontSize: 12, margin: 0 }}>
-                    📍 {mission.distanceKm} km route
-                  </p>
+                  <p style={{ fontSize: 11, color: '#555', margin: '4px 0' }}>Drop-off: {mission.dropoffAddress}</p>
+                  <p style={{ fontSize: 12, margin: 0 }}>📍 {mission.distanceKm} km route</p>
                 </div>
               </Popup>
             </CircleMarker>
