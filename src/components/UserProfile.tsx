@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
-import { doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { useThemeStore, THEME_PRESETS } from '@/store/themeStore';
 import { useMyMissions } from '@/hooks/useMyMissions';
+import EditMissionForm from '@/components/EditMissionForm';
+import MasterPage      from '@/components/MasterPage';
 import type { Mission } from '@/types/mission';
 
 // ── Install-app detection ─────────────────────────────────────────────────────
@@ -73,12 +75,22 @@ const STATUS_CONFIG: Record<Mission['status'], { label: string; color: string }>
 function MissionHistoryCard({
   mission,
   role,
+  onEdit,
 }: {
   mission: Mission;
   role:    'hero' | 'buyer';
+  onEdit?: () => void;
 }) {
-  const [confirming, setConfirming] = useState(false);
+  const [confirming,     setConfirming]     = useState(false);
+  const [confirmDelete,  setConfirmDelete]  = useState(false);
+  const [deleting,       setDeleting]       = useState(false);
   const { label, color } = STATUS_CONFIG[mission.status];
+
+  async function handleDelete() {
+    setDeleting(true);
+    try { await deleteDoc(doc(db, 'missions', mission.id)); }
+    finally { setDeleting(false); setConfirmDelete(false); }
+  }
 
   async function handleConfirmReceived() {
     setConfirming(true);
@@ -154,27 +166,39 @@ function MissionHistoryCard({
         )}
       </div>
 
-      {/* Buyer: Confirm Received button when Delivered */}
+      {/* Buyer: Confirm Received when Delivered */}
       {role === 'buyer' && mission.status === 'Delivered' && (
-        <button
-          onClick={handleConfirmReceived}
-          disabled={confirming}
-          style={{
-            marginTop:    10,
-            width:        '100%',
-            padding:      '10px',
-            borderRadius: 10,
-            border:       'none',
-            background:   'var(--color-primary)',
-            color:        '#fff',
-            fontSize:     13,
-            fontWeight:   700,
-            cursor:       confirming ? 'not-allowed' : 'pointer',
-            opacity:      confirming ? 0.7 : 1,
-          }}
-        >
+        <button onClick={handleConfirmReceived} disabled={confirming}
+          style={{ marginTop: 10, width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: 'var(--color-primary)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: confirming ? 'not-allowed' : 'pointer', opacity: confirming ? 0.7 : 1 }}>
           {confirming ? 'Confirming…' : '✓ Confirm Received — Release Payment'}
         </button>
+      )}
+
+      {/* Buyer: Edit / Delete when Open (no hero yet) */}
+      {role === 'buyer' && mission.status === 'Open' && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          <button onClick={onEdit}
+            style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: '1px solid #3a3a3a', background: 'transparent', color: '#ccc', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+            ✏️ Edit
+          </button>
+          {confirmDelete ? (
+            <>
+              <button onClick={handleDelete} disabled={deleting}
+                style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', background: '#ef4444', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                {deleting ? 'Deleting…' : 'Confirm Delete'}
+              </button>
+              <button onClick={() => setConfirmDelete(false)}
+                style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #3a3a3a', background: 'transparent', color: '#888', fontSize: 12, cursor: 'pointer' }}>
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button onClick={() => setConfirmDelete(true)}
+              style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: '1px solid #ef44444a', background: 'transparent', color: '#ef4444', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              🗑 Delete
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -199,7 +223,9 @@ interface UserProfileProps {
 }
 
 export default function UserProfile({ user, onClose }: UserProfileProps) {
-  const [tab, setTab] = useState<'hero' | 'buyer'>('hero');
+  const [tab,         setTab]         = useState<'hero' | 'buyer'>('hero');
+  const [editMission, setEditMission] = useState<Mission | null>(null);
+  const [showMaster,  setShowMaster]  = useState(false);
   const { primaryColor, setPrimaryColor } = useThemeStore();
   const install = useInstall();
   const { heroMissions, buyerMissions, loading } = useMyMissions(user.uid);
@@ -285,7 +311,14 @@ export default function UserProfile({ user, onClose }: UserProfileProps) {
           ) : (
             buyerMissions.length === 0
               ? <EmptyHistory label="buyer requests" />
-              : buyerMissions.map((m) => <MissionHistoryCard key={m.id} mission={m} role="buyer" />)
+              : buyerMissions.map((m) => (
+                  <MissionHistoryCard
+                    key={m.id}
+                    mission={m}
+                    role="buyer"
+                    onEdit={() => setEditMission(m)}
+                  />
+                ))
           )}
         </div>
 
@@ -350,6 +383,16 @@ export default function UserProfile({ user, onClose }: UserProfileProps) {
             )}
           </div>
 
+          {/* Master Page */}
+          <div style={{ marginBottom: 16 }}>
+            <button
+              onClick={() => setShowMaster(true)}
+              style={{ width: '100%', padding: '12px', borderRadius: 12, border: '1px solid #3a3a3a', background: 'transparent', color: '#ccc', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            >
+              <span>🗂</span> Master Page
+            </button>
+          </div>
+
           {/* Sign out */}
           <button
             onClick={() => signOut(auth)}
@@ -359,6 +402,16 @@ export default function UserProfile({ user, onClose }: UserProfileProps) {
           </button>
         </div>
       </div>
+
+      {/* Edit form overlay */}
+      {editMission && (
+        <EditMissionForm mission={editMission} onClose={() => setEditMission(null)} />
+      )}
+
+      {/* Master Page overlay */}
+      {showMaster && (
+        <MasterPage onClose={() => setShowMaster(false)} />
+      )}
     </div>
   );
 }
