@@ -215,6 +215,12 @@ function EmptyHistory({ label }: { label: string }) {
   );
 }
 
+// ── Admin access ─────────────────────────────────────────────────────────────
+
+const ADMIN_UIDS = new Set([
+  'ijghwu7cQNYNQOqChAG4QuYFXrI3',
+]);
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface UserProfileProps {
@@ -383,15 +389,17 @@ export default function UserProfile({ user, onClose }: UserProfileProps) {
             )}
           </div>
 
-          {/* Master Page */}
-          <div style={{ marginBottom: 16 }}>
-            <button
-              onClick={() => setShowMaster(true)}
-              style={{ width: '100%', padding: '12px', borderRadius: 12, border: '1px solid #3a3a3a', background: 'transparent', color: '#ccc', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-            >
-              <span>🗂</span> Master Page
-            </button>
-          </div>
+          {/* Master Page — admin only */}
+          {ADMIN_UIDS.has(user.uid) && (
+            <div style={{ marginBottom: 16 }}>
+              <button
+                onClick={() => setShowMaster(true)}
+                style={{ width: '100%', padding: '12px', borderRadius: 12, border: '1px solid #3a3a3a', background: 'transparent', color: '#ccc', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              >
+                <span>🗂</span> Master Page
+              </button>
+            </div>
+          )}
 
           {/* Sign out */}
           <button
