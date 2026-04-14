@@ -13,10 +13,11 @@ import type { AddressResult } from '@/hooks/useAddressSearch';
 // ─── Validation schema ────────────────────────────────────────────────────────
 
 const schema = z.object({
-  title:       z.string().min(3, 'At least 3 characters'),
-  description: z.string().optional(),
-  itemPrice:   z.coerce.number().min(0.01, 'Required'),
-  deliveryFee: z.coerce.number().min(1.00, 'Minimum $1.00'),
+  title:          z.string().min(3, 'At least 3 characters'),
+  description:    z.string().optional(),
+  marketplaceUrl: z.string().optional(),
+  itemPrice:      z.coerce.number().min(0.01, 'Required'),
+  deliveryFee:    z.coerce.number().min(1.00, 'Minimum $1.00'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -70,6 +71,12 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
 
   // Deadline state
   const [deadlineHours, setDeadlineHours] = useState(4);
+
+  // Expected delivery time (datetime-local string, default 4h from now)
+  function defaultDeliveryTime() {
+    return new Date(Date.now() + 4 * 3_600_000).toISOString().slice(0, 16);
+  }
+  const [expectedDeliveryTime, setExpectedDeliveryTime] = useState(defaultDeliveryTime);
 
   // Form
   const {
@@ -126,12 +133,15 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
     const now = new Date();
 
     await addDoc(collection(db, 'missions'), {
-      buyerId:          user!.uid,
-      heroId:           null,
-      title:            values.title.trim(),
-      description:      values.description?.trim() ?? '',
-      itemPhotoUrl:     null,
-      marketplaceUrl:   null,
+      buyerId:              user!.uid,
+      heroId:               null,
+      title:                values.title.trim(),
+      description:          values.description?.trim() ?? '',
+      itemPhotoUrl:         null,
+      marketplaceUrl:       values.marketplaceUrl?.trim() || null,
+      expectedDeliveryTime: expectedDeliveryTime
+        ? Timestamp.fromDate(new Date(expectedDeliveryTime))
+        : null,
       itemPrice:        Math.round(values.itemPrice * 100),
       deliveryFee:      deliveryFeeCents,
       platformFee:      pFee,
@@ -255,6 +265,25 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
             />
           </div>
 
+          {/* ── Marketplace URL ───────────────────────────────────────── */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, display: 'block', marginBottom: 8 }}>
+              MARKETPLACE LINK <span style={{ fontWeight: 400, textTransform: 'none', fontSize: 10 }}>(optional)</span>
+            </label>
+            <input
+              type="url"
+              className="otw-input"
+              placeholder="https://www.facebook.com/marketplace/…"
+              {...register('marketplaceUrl')}
+              style={{
+                width: '100%', background: '#0d0d0d',
+                border: '1px solid #2a2a2a', borderRadius: 10,
+                padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box',
+              }}
+            />
+            <p style={{ color: '#555', fontSize: 11, marginTop: 4 }}>Let the hero know exactly what to buy</p>
+          </div>
+
           {/* ── Addresses ─────────────────────────────────────────────── */}
           <AddressField
             label="PICKUP ADDRESS"
@@ -309,6 +338,26 @@ export default function PostMissionForm({ onClose }: { onClose: () => void }) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* ── Expected delivery time ────────────────────────────────── */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, display: 'block', marginBottom: 8 }}>
+              EXPECTED DELIVERY TIME
+            </label>
+            <input
+              type="datetime-local"
+              value={expectedDeliveryTime}
+              min={new Date().toISOString().slice(0, 16)}
+              onChange={(e) => setExpectedDeliveryTime(e.target.value)}
+              style={{
+                width: '100%', background: '#0d0d0d',
+                border: '1px solid #2a2a2a', borderRadius: 10,
+                padding: '12px 14px', color: '#fff', fontSize: 14,
+                boxSizing: 'border-box', colorScheme: 'dark',
+              }}
+            />
+            <p style={{ color: '#555', fontSize: 11, marginTop: 4 }}>When do you need this delivered?</p>
           </div>
 
           {/* ── Pricing ───────────────────────────────────────────────── */}

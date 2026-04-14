@@ -35,7 +35,8 @@ export interface Mission {
   dropoffAddress: string;
   dropoffCoords: GeoPoint;
 
-  pickupDeadline: Date;
+  pickupDeadline:       Date;
+  expectedDeliveryTime: Date | null;
   distanceKm: number;
 
   status: MissionStatus;

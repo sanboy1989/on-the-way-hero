@@ -13,10 +13,11 @@ import type { AddressResult } from '@/hooks/useAddressSearch';
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
-  title:       z.string().min(3, 'At least 3 characters'),
-  description: z.string().optional(),
-  itemPrice:   z.coerce.number().min(0.01, 'Required'),
-  deliveryFee: z.coerce.number().min(1.00, 'Minimum $1.00'),
+  title:          z.string().min(3, 'At least 3 characters'),
+  description:    z.string().optional(),
+  marketplaceUrl: z.string().optional(),
+  itemPrice:      z.coerce.number().min(0.01, 'Required'),
+  deliveryFee:    z.coerce.number().min(1.00, 'Minimum $1.00'),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -66,6 +67,13 @@ export default function EditMissionForm({ mission, onClose }: Props) {
   const [addressError, setAddressError] = useState<string | null>(null);
   const [deadlineHours, setDeadlineHours] = useState(4);
 
+  // Pre-fill expected delivery time from existing mission
+  const [expectedDeliveryTime, setExpectedDeliveryTime] = useState(
+    mission.expectedDeliveryTime
+      ? mission.expectedDeliveryTime.toISOString().slice(0, 16)
+      : new Date(Date.now() + 4 * 3_600_000).toISOString().slice(0, 16),
+  );
+
   const pickupSearch  = useAddressSearch(pickup  ? '' : pickupQuery);
   const dropoffSearch = useAddressSearch(dropoff ? '' : dropoffQuery);
 
@@ -74,10 +82,11 @@ export default function EditMissionForm({ mission, onClose }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: {
-      title:       mission.title,
-      description: mission.description ?? '',
-      itemPrice:   mission.itemPrice   / 100,
-      deliveryFee: mission.deliveryFee / 100,
+      title:          mission.title,
+      description:    mission.description ?? '',
+      marketplaceUrl: mission.marketplaceUrl ?? '',
+      itemPrice:      mission.itemPrice   / 100,
+      deliveryFee:    mission.deliveryFee / 100,
     },
   });
 
@@ -111,17 +120,21 @@ export default function EditMissionForm({ mission, onClose }: Props) {
     const distanceKm       = Math.round(haversineKm(pickup.lat, pickup.lng, dropoff.lat, dropoff.lng) * 10) / 10;
 
     await updateDoc(doc(db, 'missions', mission.id), {
-      title:          values.title.trim(),
-      description:    values.description?.trim() ?? '',
-      itemPrice:      Math.round(values.itemPrice * 100),
-      deliveryFee:    deliveryFeeCents,
-      platformFee:    pFee,
-      heroEarning:    hEarning,
-      pickupAddress:  pickup.shortName,
-      pickupCoords:   { latitude: pickup.lat, longitude: pickup.lng },
-      dropoffAddress: dropoff.shortName,
-      dropoffCoords:  { latitude: dropoff.lat, longitude: dropoff.lng },
-      pickupDeadline: Timestamp.fromDate(new Date(Date.now() + deadlineHours * 3_600_000)),
+      title:                values.title.trim(),
+      description:          values.description?.trim() ?? '',
+      marketplaceUrl:       values.marketplaceUrl?.trim() || null,
+      itemPrice:            Math.round(values.itemPrice * 100),
+      deliveryFee:          deliveryFeeCents,
+      platformFee:          pFee,
+      heroEarning:          hEarning,
+      pickupAddress:        pickup.shortName,
+      pickupCoords:         { latitude: pickup.lat, longitude: pickup.lng },
+      dropoffAddress:       dropoff.shortName,
+      dropoffCoords:        { latitude: dropoff.lat, longitude: dropoff.lng },
+      pickupDeadline:       Timestamp.fromDate(new Date(Date.now() + deadlineHours * 3_600_000)),
+      expectedDeliveryTime: expectedDeliveryTime
+        ? Timestamp.fromDate(new Date(expectedDeliveryTime))
+        : null,
       distanceKm,
     });
 
@@ -157,6 +170,16 @@ export default function EditMissionForm({ mission, onClose }: Props) {
               style={{ width: '100%', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, resize: 'none', boxSizing: 'border-box' }} />
           </div>
 
+          {/* Marketplace URL */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, display: 'block', marginBottom: 8 }}>
+              MARKETPLACE LINK <span style={{ fontWeight: 400, textTransform: 'none', fontSize: 10 }}>(optional)</span>
+            </label>
+            <input type="url" className="otw-input" placeholder="https://www.facebook.com/marketplace/…" {...register('marketplaceUrl')}
+              style={{ width: '100%', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
+            <p style={{ color: '#555', fontSize: 11, marginTop: 4 }}>Let the hero know exactly what to buy</p>
+          </div>
+
           {/* Addresses */}
           <AddressField label="PICKUP ADDRESS" placeholder="Search pickup location…"
             query={pickupQuery} onQuery={setPickupQuery}
@@ -182,6 +205,18 @@ export default function EditMissionForm({ mission, onClose }: Props) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Expected delivery time */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, display: 'block', marginBottom: 8 }}>EXPECTED DELIVERY TIME</label>
+            <input
+              type="datetime-local"
+              value={expectedDeliveryTime}
+              min={new Date().toISOString().slice(0, 16)}
+              onChange={(e) => setExpectedDeliveryTime(e.target.value)}
+              style={{ width: '100%', background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, boxSizing: 'border-box', colorScheme: 'dark' }}
+            />
           </div>
 
           {/* Pricing */}

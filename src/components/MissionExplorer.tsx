@@ -147,11 +147,33 @@ function MissionCard({
         </div>
       </div>
 
-      {/* Distance + Deadline */}
-      <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+      {/* Distance + Deadline + Delivery time */}
+      <div className="flex items-center gap-3 text-xs text-gray-500 mb-3 flex-wrap">
         <span>📍 {mission.distanceKm} km</span>
         <span>⏰ {timeUntilDeadline(mission.pickupDeadline)}</span>
+        {mission.expectedDeliveryTime && (
+          <span style={{ color: '#EAB308' }}>
+            🕐 by {mission.expectedDeliveryTime.toLocaleString('en-CA', {
+              month: 'short', day: 'numeric',
+              hour: 'numeric', minute: '2-digit', hour12: true,
+            })}
+          </span>
+        )}
       </div>
+
+      {/* Marketplace link */}
+      {mission.marketplaceUrl && (
+        <a
+          href={mission.marketplaceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1.5 text-xs font-semibold mb-3"
+          style={{ color: 'var(--color-primary)', textDecoration: 'none' }}
+        >
+          <span>🔗</span> View item listing
+        </a>
+      )}
 
       {/* Financials */}
       <div className="rounded-lg p-3 mb-3 space-y-1.5" style={{ backgroundColor: '#0d0d0d', border: `1px solid ${COLORS.border}` }}>

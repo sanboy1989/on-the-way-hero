@@ -224,6 +224,55 @@ export default function ActiveMissionSheet({ mission, onClose }: Props) {
             })}
           </div>
 
+          {/* ── Item info ───────────────────────────────────────────── */}
+          {(mission.marketplaceUrl || mission.expectedDeliveryTime) && (
+            <div
+              style={{
+                background:   '#0d0d0d',
+                border:       '1px solid #2a2a2a',
+                borderRadius: 12,
+                padding:      '12px 14px',
+                marginBottom: 16,
+                display:      'flex',
+                flexDirection:'column',
+                gap:          8,
+              }}
+            >
+              {mission.marketplaceUrl && (
+                <a
+                  href={mission.marketplaceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display:        'flex',
+                    alignItems:     'center',
+                    gap:            8,
+                    color:          'var(--color-primary)',
+                    fontSize:       13,
+                    fontWeight:     700,
+                    textDecoration: 'none',
+                  }}
+                >
+                  <span>🔗</span>
+                  <span>View item listing</span>
+                  <span style={{ fontSize: 10, color: '#555', fontWeight: 400, marginLeft: 'auto' }}>opens browser</span>
+                </a>
+              )}
+              {mission.expectedDeliveryTime && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                  <span>🕐</span>
+                  <span style={{ color: '#888' }}>Deliver by</span>
+                  <span style={{ color: '#fff', fontWeight: 600 }}>
+                    {mission.expectedDeliveryTime.toLocaleString('en-CA', {
+                      month: 'short', day: 'numeric',
+                      hour: 'numeric', minute: '2-digit', hour12: true,
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── Route + navigation ───────────────────────────────────── */}
           <div
             style={{

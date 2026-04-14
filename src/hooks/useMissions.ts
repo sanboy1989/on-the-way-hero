@@ -20,10 +20,11 @@ import type { Mission } from '@/types/mission';
 export function fromDoc(doc: QueryDocumentSnapshot<DocumentData>): Mission {
   const d = doc.data();
   return {
-    ...(d as Omit<Mission, 'id' | 'pickupDeadline' | 'createdAt'>),
-    id:              doc.id,
-    pickupDeadline:  (d.pickupDeadline as Timestamp).toDate(),
-    createdAt:       (d.createdAt      as Timestamp).toDate(),
+    ...(d as Omit<Mission, 'id' | 'pickupDeadline' | 'expectedDeliveryTime' | 'createdAt'>),
+    id:                   doc.id,
+    pickupDeadline:       (d.pickupDeadline as Timestamp).toDate(),
+    expectedDeliveryTime: d.expectedDeliveryTime ? (d.expectedDeliveryTime as Timestamp).toDate() : null,
+    createdAt:            (d.createdAt as Timestamp).toDate(),
   };
 }
 
