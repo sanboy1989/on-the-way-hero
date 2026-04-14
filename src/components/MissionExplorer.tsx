@@ -285,6 +285,7 @@ export default function MissionExplorer() {
   const [view, setView]                 = useState<'map' | 'list'>('map');
   const [missions]                      = useState<Mission[]>(MOCK_MISSIONS);
   const [selectedMission, setSelected]  = useState<Mission | null>(null);
+  const [sidebarOpen, setSidebarOpen]   = useState(false); // collapsed by default on mobile
 
   const handleAccept = useCallback((mission: Mission) => {
     // TODO: call Firebase Function completeMission(missionId)
@@ -339,36 +340,72 @@ export default function MissionExplorer() {
 
         {/* Map view */}
         {view === 'map' && (
-          <>
-            <div className="flex-1 relative">
-              <MissionMap
-                missions={missions}
-                selectedMission={selectedMission}
-                onSelect={setSelected}
-              />
-            </div>
+          <div className="flex-1 relative overflow-hidden">
 
-            {/* Side panel */}
-            <div
-              className="w-80 flex-shrink-0 overflow-y-auto flex flex-col"
-              style={{ backgroundColor: '#161616', borderLeft: `1px solid ${COLORS.border}` }}
+            {/* Full-bleed map */}
+            <MissionMap
+              missions={missions}
+              selectedMission={selectedMission}
+              onSelect={(m) => { setSelected(m); setSidebarOpen(true); }}
+            />
+
+            {/* ── Floating toggle button ─────────────────────────────────── */}
+            <button
+              onClick={() => setSidebarOpen((o) => !o)}
+              className="absolute bottom-6 right-4 z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold text-white shadow-lg transition-all active:scale-95"
+              style={{ backgroundColor: COLORS.orange }}
             >
-              <div className="px-3 py-2 text-xs text-gray-500 font-semibold uppercase tracking-wider flex-shrink-0">
-                {missions.length} Open Mission{missions.length !== 1 ? 's' : ''}
+              {sidebarOpen ? (
+                <>
+                  <span>✕</span>
+                  <span>Hide List</span>
+                </>
+              ) : (
+                <>
+                  <span>☰</span>
+                  <span>{missions.length} Missions</span>
+                </>
+              )}
+            </button>
+
+            {/* ── Slide-up mission list panel (overlay on mobile) ────────── */}
+            {sidebarOpen && (
+              <div
+                className="absolute bottom-0 left-0 right-0 z-[999] flex flex-col rounded-t-2xl overflow-hidden"
+                style={{
+                  backgroundColor: '#161616',
+                  borderTop: `1px solid ${COLORS.border}`,
+                  maxHeight: '60vh',
+                }}
+              >
+                {/* Drag handle + header */}
+                <div
+                  className="flex items-center justify-between px-4 py-3 flex-shrink-0 cursor-pointer"
+                  style={{ borderBottom: `1px solid ${COLORS.border}` }}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <div className="mx-auto w-10 h-1 rounded-full bg-gray-600 mb-1 absolute left-1/2 -translate-x-1/2 top-2" />
+                  <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider mt-1">
+                    {missions.length} Open Mission{missions.length !== 1 ? 's' : ''}
+                  </span>
+                  <span className="text-gray-500 text-sm">✕</span>
+                </div>
+
+                {/* Scrollable cards */}
+                <div className="overflow-y-auto px-3 py-3 space-y-3">
+                  {missions.map((m) => (
+                    <MissionCard
+                      key={m.id}
+                      mission={m}
+                      isSelected={selectedMission?.id === m.id}
+                      onSelect={() => setSelected(m)}
+                      onAccept={handleAccept}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-3">
-                {missions.map((m) => (
-                  <MissionCard
-                    key={m.id}
-                    mission={m}
-                    isSelected={selectedMission?.id === m.id}
-                    onSelect={() => setSelected(m)}
-                    onAccept={handleAccept}
-                  />
-                ))}
-              </div>
-            </div>
-          </>
+            )}
+          </div>
         )}
 
         {/* List view */}

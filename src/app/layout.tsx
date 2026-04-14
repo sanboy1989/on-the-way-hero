@@ -12,6 +12,14 @@ export const metadata: Metadata = {
     capable:          true,
     statusBarStyle:   'black-translucent',
     title:            'OTW Hero',
+    startupImage:     '/icons/apple-touch-icon.png',
+  },
+  icons: {
+    apple: '/icons/apple-touch-icon.png',
+    icon:  [
+      { url: '/icons/icon-192.png', sizes: '192x192' },
+      { url: '/icons/icon-512.png', sizes: '512x512' },
+    ],
   },
 };
 
