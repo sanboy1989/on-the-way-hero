@@ -15,9 +15,23 @@ export default function LoginPage() {
       await signInWithPopup(auth, googleProvider);
       // onAuthStateChanged in AuthProvider will update the store
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Sign-in failed';
-      // Ignore user-cancelled popup
-      if (!msg.includes('popup-closed-by-user')) {
+      const code = (err as { code?: string }).code ?? '';
+      const msg  = err instanceof Error ? err.message : '';
+      console.error('[Auth error]', code, msg);
+
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        // user dismissed — silent
+      } else if (code === 'auth/unauthorized-domain') {
+        setError('Domain not authorized. Add this site to Firebase Auth → Authorized domains.');
+      } else if (code === 'auth/operation-not-allowed') {
+        setError('Google Sign-In is not enabled in Firebase console.');
+      } else if (code === 'auth/invalid-api-key' || code === 'auth/invalid-app-id') {
+        setError('Firebase config is missing or incorrect. Check .env.local.');
+      } else if (code === 'auth/popup-blocked') {
+        setError('Popup was blocked by the browser. Please allow popups for this site.');
+      } else if (code) {
+        setError(`Error: ${code}`);
+      } else {
         setError('Sign-in failed. Please try again.');
       }
     } finally {
