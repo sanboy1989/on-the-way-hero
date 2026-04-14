@@ -17,7 +17,7 @@ import type { Mission } from '@/types/mission';
 
 // ── Firestore → Mission converter ─────────────────────────────────────────────
 
-function fromDoc(doc: QueryDocumentSnapshot<DocumentData>): Mission {
+export function fromDoc(doc: QueryDocumentSnapshot<DocumentData>): Mission {
   const d = doc.data();
   return {
     ...(d as Omit<Mission, 'id' | 'pickupDeadline' | 'createdAt'>),
