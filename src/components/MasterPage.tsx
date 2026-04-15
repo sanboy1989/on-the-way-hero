@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { doc, updateDoc, deleteDoc, collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAllMissions } from '@/hooks/useAllMissions';
 import EditMissionForm from '@/components/EditMissionForm';
@@ -33,6 +33,127 @@ const FILTERS = [
 function centsToCAD(c: number) { return `$${(c / 100).toFixed(2)}`; }
 function shortDate(d: Date)    { return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }); }
 function shortUid(uid: string | null) { return uid ? uid.slice(0, 6) + '…' : '—'; }
+
+// ── Pending verification type ─────────────────────────────────────────────────
+
+interface PendingUser {
+  uid:                     string;
+  displayName:             string | null;
+  email:                   string | null;
+  verificationSubmittedAt: Date | null;
+  idImageBase64:           string | null;
+}
+
+// ── Hook: pending verifications ───────────────────────────────────────────────
+
+function usePendingVerifications(): PendingUser[] {
+  const [users, setUsers] = useState<PendingUser[]>([]);
+  useEffect(() => {
+    const q = query(collection(db, 'users'), where('verificationStatus', '==', 'pending'));
+    const unsub = onSnapshot(q, (snap) => {
+      setUsers(snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          uid:                     d.id,
+          displayName:             data.displayName ?? null,
+          email:                   data.email ?? null,
+          verificationSubmittedAt: data.verificationSubmittedAt
+            ? (data.verificationSubmittedAt as Timestamp).toDate()
+            : null,
+          idImageBase64:           data.idImageBase64 ?? null,
+        };
+      }));
+    });
+    return unsub;
+  }, []);
+  return users;
+}
+
+// ── Verification card ─────────────────────────────────────────────────────────
+
+function VerificationCard({ user }: { user: PendingUser }) {
+  const [saving,    setSaving]    = useState(false);
+  const [expanded,  setExpanded]  = useState(false);
+
+  async function decide(approved: boolean) {
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        verificationStatus: approved ? 'verified' : 'rejected',
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ background: 'var(--otw-card)', border: '1px solid #2a2a2a', borderRadius: 12, padding: '14px', marginBottom: 12 }}>
+      {/* User info */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+          👤
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ color: '#fff', fontWeight: 700, fontSize: 13, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {user.displayName ?? '(no name)'}
+          </p>
+          <p style={{ color: '#888', fontSize: 11, margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {user.email ?? '—'}
+          </p>
+        </div>
+        <span style={{ fontSize: 10, color: '#EAB308', fontWeight: 700, background: '#EAB30822', border: '1px solid #EAB30844', borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>
+          PENDING
+        </span>
+      </div>
+
+      {/* Submitted date */}
+      {user.verificationSubmittedAt && (
+        <p style={{ color: '#555', fontSize: 11, margin: '0 0 10px' }}>
+          Submitted {user.verificationSubmittedAt.toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
+        </p>
+      )}
+
+      {/* ID image toggle */}
+      {user.idImageBase64 ? (
+        <>
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            style={{ width: '100%', padding: '8px 0', borderRadius: 8, border: '1px solid #3a3a3a', background: 'transparent', color: '#ccc', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginBottom: 10 }}
+          >
+            {expanded ? '🔼 Hide ID' : '🪪 View ID Photo'}
+          </button>
+          {expanded && (
+            <img
+              src={`data:image/jpeg;base64,${user.idImageBase64}`}
+              alt="ID document"
+              style={{ width: '100%', borderRadius: 8, marginBottom: 10, border: '1px solid #3a3a3a' }}
+            />
+          )}
+        </>
+      ) : (
+        <p style={{ color: '#555', fontSize: 12, marginBottom: 10 }}>No image uploaded</p>
+      )}
+
+      {/* Approve / Reject */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          onClick={() => decide(true)}
+          disabled={saving}
+          style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', background: '#22C55E', color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}
+        >
+          ✓ Approve
+        </button>
+        <button
+          onClick={() => decide(false)}
+          disabled={saving}
+          style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', background: '#EF4444', color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}
+        >
+          ✕ Reject
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ── Mission row ───────────────────────────────────────────────────────────────
 
@@ -84,7 +205,6 @@ function MissionRow({
           {mission.title}
         </p>
 
-        {/* Inline status dropdown */}
         <select
           value={mission.status}
           disabled={statusSaving}
@@ -168,8 +288,12 @@ function MissionRow({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+type Tab = 'missions' | 'verifications';
+
 export default function MasterPage({ onClose }: { onClose: () => void }) {
-  const { missions, loading } = useAllMissions();
+  const { missions, loading }  = useAllMissions();
+  const pendingUsers           = usePendingVerifications();
+  const [tab,         setTab]         = useState<Tab>('missions');
   const [filter,      setFilter]      = useState<typeof FILTERS[number]['label']>('All');
   const [editMission, setEditMission] = useState<Mission | null>(null);
 
@@ -186,7 +310,7 @@ export default function MasterPage({ onClose }: { onClose: () => void }) {
         {/* Backdrop */}
         <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)' }} />
 
-        {/* Panel — full height */}
+        {/* Panel */}
         <div
           style={{
             position:      'relative',
@@ -207,67 +331,126 @@ export default function MasterPage({ onClose }: { onClose: () => void }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid var(--otw-border)', flexShrink: 0 }}>
             <div>
               <p style={{ color: '#888', fontSize: 11, fontWeight: 700, letterSpacing: 1, margin: 0 }}>ADMIN</p>
-              <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: '2px 0 0' }}>
-                Master Page <span style={{ color: '#555', fontWeight: 400, fontSize: 13 }}>({missions.length} total)</span>
-              </p>
+              <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: '2px 0 0' }}>Master Page</p>
             </div>
             <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', fontSize: 20, cursor: 'pointer' }}>✕</button>
           </div>
 
-          {/* Filter tabs */}
-          <div style={{ display: 'flex', padding: '10px 16px', gap: 8, borderBottom: '1px solid var(--otw-border)', flexShrink: 0 }}>
-            {FILTERS.map((f) => {
-              const count = f.statuses
-                ? missions.filter((m) => (f.statuses as readonly string[]).includes(m.status)).length
-                : missions.length;
-              return (
-                <button
-                  key={f.label}
-                  onClick={() => setFilter(f.label)}
-                  style={{
-                    padding:      '6px 12px',
-                    borderRadius: 8,
-                    border:       'none',
-                    background:   filter === f.label ? 'var(--color-primary)' : '#2a2a2a',
-                    color:        filter === f.label ? '#fff' : '#888',
-                    fontSize:     12,
-                    fontWeight:   600,
-                    cursor:       'pointer',
-                  }}
-                >
-                  {f.label} {count > 0 && <span style={{ opacity: 0.75 }}>({count})</span>}
-                </button>
-              );
-            })}
+          {/* Top-level tabs: Missions / Verifications */}
+          <div style={{ display: 'flex', padding: '10px 16px 0', gap: 8, flexShrink: 0 }}>
+            {([
+              { key: 'missions',      label: 'Missions',      count: missions.length      },
+              { key: 'verifications', label: 'Verifications', count: pendingUsers.length  },
+            ] as { key: Tab; label: string; count: number }[]).map(({ key, label, count }) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                style={{
+                  padding:      '7px 14px',
+                  borderRadius: '8px 8px 0 0',
+                  border:       'none',
+                  borderBottom: tab === key ? '2px solid var(--color-primary)' : '2px solid transparent',
+                  background:   'transparent',
+                  color:        tab === key ? 'var(--color-primary)' : '#888',
+                  fontSize:     13,
+                  fontWeight:   700,
+                  cursor:       'pointer',
+                  position:     'relative',
+                }}
+              >
+                {label}
+                {count > 0 && (
+                  <span style={{
+                    marginLeft:   6,
+                    background:   key === 'verifications' && tab !== key ? '#EAB308' : 'var(--color-primary)',
+                    color:        '#fff',
+                    borderRadius: 99,
+                    fontSize:     10,
+                    fontWeight:   800,
+                    padding:      '1px 6px',
+                    opacity:      tab === key ? 1 : 0.8,
+                  }}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
+          <div style={{ height: 1, background: 'var(--otw-border)', flexShrink: 0 }} />
 
-          {/* Mission list */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 40px' }}>
-            {loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid var(--color-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          {/* ── Missions tab ──────────────────────────────────────────────── */}
+          {tab === 'missions' && (
+            <>
+              {/* Filter tabs */}
+              <div style={{ display: 'flex', padding: '10px 16px', gap: 8, borderBottom: '1px solid var(--otw-border)', flexShrink: 0 }}>
+                {FILTERS.map((f) => {
+                  const count = f.statuses
+                    ? missions.filter((m) => (f.statuses as readonly string[]).includes(m.status)).length
+                    : missions.length;
+                  return (
+                    <button
+                      key={f.label}
+                      onClick={() => setFilter(f.label)}
+                      style={{
+                        padding:      '6px 12px',
+                        borderRadius: 8,
+                        border:       'none',
+                        background:   filter === f.label ? 'var(--color-primary)' : '#2a2a2a',
+                        color:        filter === f.label ? '#fff' : '#888',
+                        fontSize:     12,
+                        fontWeight:   600,
+                        cursor:       'pointer',
+                      }}
+                    >
+                      {f.label} {count > 0 && <span style={{ opacity: 0.75 }}>({count})</span>}
+                    </button>
+                  );
+                })}
               </div>
-            ) : filtered.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 24px', color: '#555' }}>
-                <p style={{ fontSize: 32, margin: '0 0 8px' }}>📭</p>
-                <p style={{ fontSize: 13 }}>No missions in this category</p>
+
+              <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 40px' }}>
+                {loading ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid var(--color-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 24px', color: '#555' }}>
+                    <p style={{ fontSize: 32, margin: '0 0 8px' }}>📭</p>
+                    <p style={{ fontSize: 13 }}>No missions in this category</p>
+                  </div>
+                ) : (
+                  filtered.map((m) => (
+                    <MissionRow
+                      key={m.id}
+                      mission={m}
+                      onEdit={() => setEditMission(m)}
+                      onDeleted={() => setEditMission(null)}
+                    />
+                  ))
+                )}
               </div>
-            ) : (
-              filtered.map((m) => (
-                <MissionRow
-                  key={m.id}
-                  mission={m}
-                  onEdit={() => setEditMission(m)}
-                  onDeleted={() => setEditMission(null)}
-                />
-              ))
-            )}
-          </div>
+            </>
+          )}
+
+          {/* ── Verifications tab ─────────────────────────────────────────── */}
+          {tab === 'verifications' && (
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 40px' }}>
+              {pendingUsers.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 24px', color: '#555' }}>
+                  <p style={{ fontSize: 32, margin: '0 0 8px' }}>✅</p>
+                  <p style={{ fontSize: 13 }}>No pending verifications</p>
+                </div>
+              ) : (
+                pendingUsers.map((u) => (
+                  <VerificationCard key={u.uid} user={u} />
+                ))
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Edit form mounts on top */}
       {editMission && (
         <EditMissionForm mission={editMission} onClose={() => setEditMission(null)} />
       )}
