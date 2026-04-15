@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { ref, uploadBytes } from 'firebase/storage';
 import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import { storage, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 
 interface Props {
   user:    User;
@@ -42,6 +41,31 @@ Under applicable privacy law you have the right to access, correct, or request d
 8. Consent
 By tapping "I Agree & Upload ID" below, you expressly consent to On The Way Hero collecting, storing, and using your ID document strictly as described above.`;
 
+// Compress image using canvas and return base64 JPEG string
+async function compressImage(file: File, maxPx = 1200, quality = 0.7): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const w = Math.round(img.width  * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width  = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { reject(new Error('canvas unavailable')); return; }
+      ctx.drawImage(img, 0, 0, w, h);
+      // Remove the data URL prefix ("data:image/jpeg;base64,") — store raw base64 only
+      const base64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
+      resolve(base64);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image load failed')); };
+    img.src = url;
+  });
+}
+
 export default function VerifyIdentitySheet({ user, onClose, onDone }: Props) {
   const [step,      setStep]      = useState<'legal' | 'upload' | 'done'>('legal');
   const [agreed,    setAgreed]    = useState(false);
@@ -55,17 +79,23 @@ export default function VerifyIdentitySheet({ user, onClose, onDone }: Props) {
     setUploading(true);
     setError(null);
     try {
-      const storageRef = ref(storage, `verifications/${user.uid}/id_${Date.now()}`);
-      await uploadBytes(storageRef, file);
+      const base64 = await compressImage(file);
+      // Rough size check — Firestore doc limit is 1 MB
+      if (base64.length > 900_000) {
+        setError('Image is too large even after compression. Please use a lower-resolution photo.');
+        return;
+      }
       await setDoc(doc(db, 'users', user.uid), {
         verificationStatus:        'pending',
         verificationSubmittedAt:   Timestamp.fromDate(new Date()),
+        idImageBase64:             base64,
         displayName:               user.displayName,
         email:                     user.email,
       }, { merge: true });
       setStep('done');
-    } catch {
-      setError('Upload failed. Please check your connection and try again.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Upload failed: ${msg}`);
     } finally {
       setUploading(false);
     }

@@ -3,9 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { signOut, updateProfile } from 'firebase/auth';
 import { doc, updateDoc, deleteDoc, Timestamp, onSnapshot, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { User } from 'firebase/auth';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { useThemeStore } from '@/store/themeStore';
 import type { ColorMode } from '@/store/themeStore';
 import { useMyMissions } from '@/hooks/useMyMissions';
@@ -218,13 +217,26 @@ export default function UserProfile({ user, onClose }: UserProfileProps) {
     if (!file) return;
     setUploadingPic(true);
     try {
-      const storageRef = ref(storage, `profilePics/${user.uid}`);
-      const snapshot   = await uploadBytes(storageRef, file);
-      const url        = await getDownloadURL(snapshot.ref);
-      await updateProfile(user, { photoURL: url });
-      // Also persist to Firestore so other parts of app can read it
-      await setDoc(doc(db, 'users', user.uid), { photoURL: url }, { merge: true });
-      setLocalPhotoURL(url);
+      // Compress to ≤ 256 px, quality 0.8 — keeps base64 well under Firestore 1 MB limit
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const img = new Image();
+        const blobUrl = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(blobUrl);
+          const MAX = 256;
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width  = Math.round(img.width  * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = () => { URL.revokeObjectURL(blobUrl); reject(new Error('load failed')); };
+        img.src = blobUrl;
+      });
+      await updateProfile(user, { photoURL: dataUrl });
+      await setDoc(doc(db, 'users', user.uid), { photoURL: dataUrl }, { merge: true });
+      setLocalPhotoURL(dataUrl);
     } finally {
       setUploadingPic(false);
     }
